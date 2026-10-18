@@ -7,9 +7,10 @@ import { GanttWaterfall } from './components/GanttWaterfall.js';
 import { DagVisualizer } from './components/DagVisualizer.js';
 import { SecurityAuditList } from './components/SecurityAuditList.js';
 import { MatrixPreview } from './components/MatrixPreview.js';
+import { RunDiffViewer } from './components/RunDiffViewer.js';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'profiler' | 'dag' | 'linter' | 'matrix'>('profiler');
+  const [activeTab, setActiveTab] = useState<'profiler' | 'dag' | 'diff' | 'linter' | 'matrix'>('profiler');
   const [repo, setRepo] = useState<string>('sample');
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [findings, setFindings] = useState<SecurityFinding[]>([]);
@@ -126,6 +127,10 @@ jobs:
               </div>
             )}
           </>
+        )}
+
+        {activeTab === 'diff' && (
+          <RunDiffViewer repo={repo} />
         )}
 
         {activeTab === 'linter' && (

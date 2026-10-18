@@ -45,6 +45,18 @@ export function exportToSarif(findings: SecurityFinding[]): string {
                 shortDescription: { text: 'Hardcoded secret or credential token' },
                 defaultConfiguration: { level: 'error' },
               },
+              {
+                id: 'PL-SEC-006',
+                name: 'InsecurePullRequestTargetCheckout',
+                shortDescription: { text: 'Untrusted head branch checkout in pull_request_target' },
+                defaultConfiguration: { level: 'error' },
+              },
+              {
+                id: 'PL-SEC-007',
+                name: 'SelfHostedRunnerOnPublicPr',
+                shortDescription: { text: 'Dangerous self-hosted runner on public PR triggers' },
+                defaultConfiguration: { level: 'warning' },
+              },
             ],
           },
         },

@@ -8,4 +8,7 @@ export * from './evaluator/context.js';
 export * from './evaluator/matrix.js';
 export * from './api/github_client.js';
 export * from './api/sample_data.js';
+export * from './analyzer/diff_engine.js';
+export * from './analyzer/dag_exporter.js';
+export * from './reporter/step_summary.js';
 export * from './server/app.js';

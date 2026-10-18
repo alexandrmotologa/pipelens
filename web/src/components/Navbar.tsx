@@ -1,8 +1,8 @@
 import React from 'react';
 
 interface NavbarProps {
-  activeTab: 'profiler' | 'dag' | 'linter' | 'matrix';
-  setActiveTab: (tab: 'profiler' | 'dag' | 'linter' | 'matrix') => void;
+  activeTab: 'profiler' | 'dag' | 'diff' | 'linter' | 'matrix';
+  setActiveTab: (tab: 'profiler' | 'dag' | 'diff' | 'linter' | 'matrix') => void;
   repo: string;
   setRepo: (repo: string) => void;
   onAnalyze: () => void;
@@ -91,6 +91,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             🕸️ Critical Path DAG
+          </button>
+          <button
+            onClick={() => setActiveTab('diff')}
+            className={`px-3 py-2 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+              activeTab === 'diff'
+                ? 'bg-slate-800 text-emerald-400 border border-slate-700'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+            }`}
+          >
+            ⚖️ Run Diff & Regressions
           </button>
           <button
             onClick={() => setActiveTab('linter')}

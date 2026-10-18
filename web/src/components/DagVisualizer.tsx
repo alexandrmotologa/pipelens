@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CriticalPathResult } from '../types.js';
 
 interface DagVisualizerProps {
@@ -7,6 +7,35 @@ interface DagVisualizerProps {
 
 export const DagVisualizer: React.FC<DagVisualizerProps> = ({ criticalPath }) => {
   const { nodes, edges } = criticalPath;
+  const [copiedMermaid, setCopiedMermaid] = useState(false);
+
+  const handleCopyMermaid = async () => {
+    try {
+      const res = await fetch('/api/export-dag?format=mermaid');
+      const text = await res.text();
+      await navigator.clipboard.writeText(text);
+      setCopiedMermaid(true);
+      setTimeout(() => setCopiedMermaid(false), 2000);
+    } catch {
+      // fallback
+    }
+  };
+
+  const handleDownloadSvg = async () => {
+    try {
+      const res = await fetch('/api/export-dag?format=svg');
+      const svgText = await res.text();
+      const blob = new Blob([svgText], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pipelens_dag.svg';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // fallback
+    }
+  };
 
   if (nodes.length === 0) {
     return (
@@ -85,15 +114,20 @@ export const DagVisualizer: React.FC<DagVisualizerProps> = ({ criticalPath }) =>
           </h3>
           <p className="text-xs text-slate-400">Directed Acyclic Graph layout with topological Critical Path highlighting.</p>
         </div>
-        <div className="flex items-center space-x-3 text-xs">
-          <div className="flex items-center space-x-1.5">
-            <span className="w-3 h-0.5 bg-amber-400 inline-block shadow-sm"></span>
-            <span className="text-amber-300 font-medium">Critical Path Edge</span>
-          </div>
-          <div className="flex items-center space-x-1.5">
-            <span className="w-3 h-0.5 bg-slate-600 inline-block"></span>
-            <span className="text-slate-400">Normal Dependency</span>
-          </div>
+
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={handleCopyMermaid}
+            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg border border-slate-700 transition-colors flex items-center space-x-1"
+          >
+            <span>{copiedMermaid ? '✓ Copied Mermaid' : '📋 Copy Mermaid'}</span>
+          </button>
+          <button
+            onClick={handleDownloadSvg}
+            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg border border-slate-700 transition-colors flex items-center space-x-1"
+          >
+            <span>💾 Download SVG</span>
+          </button>
         </div>
       </div>
 

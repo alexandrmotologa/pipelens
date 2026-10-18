@@ -86,6 +86,50 @@ export function generateSafeFix(content: string, filePath: string, findings: Sec
 }
 
 /**
+ * Creates safe automated fixes with dynamic online SHA resolution for community actions.
+ */
+export async function generateSafeFixAsync(
+  content: string,
+  filePath: string,
+  findings: SecurityFinding[],
+  token?: string
+): Promise<YamlFix | null> {
+  const { resolveActionSha } = await import('./sha_resolver.js');
+
+  const syncFix = generateSafeFix(content, filePath, findings);
+  let fixedContent = syncFix ? syncFix.fixedYaml : content;
+  let modificationsCount = syncFix ? 1 : 0;
+
+  const unpinnedFindings = findings.filter(f => f.ruleId === 'PL-SEC-001');
+  for (const f of unpinnedFindings) {
+    const usesMatch = f.snippet?.match(/uses:\s*['"]?([a-zA-Z0-9_\-\.\/]+@[a-zA-Z0-9_\-\.]+)['"]?/);
+    if (usesMatch) {
+      const actionRef = usesMatch[1];
+      const resolved = await resolveActionSha(actionRef, token);
+      if (resolved && !fixedContent.includes(resolved.sha)) {
+        const actionName = actionRef.split('@')[0];
+        const regex = new RegExp(`(uses:\\s*['"]?)${actionRef.replace('/', '\\/')}(['"]?)`, 'g');
+        fixedContent = fixedContent.replace(regex, `$1${actionName}@${resolved.sha} # ${resolved.versionComment}$2`);
+        modificationsCount++;
+      }
+    }
+  }
+
+  if (modificationsCount === 0 || fixedContent === content) {
+    return null;
+  }
+
+  const diff = generateUnifiedDiff(filePath, content, fixedContent);
+  return {
+    file: filePath,
+    description: `Applied ${modificationsCount} automated security hardening fix(es).`,
+    originalYaml: content,
+    fixedYaml: fixedContent,
+    diff,
+  };
+}
+
+/**
  * Applies automated fixes directly to files on disk.
  */
 export function applyFileFixes(

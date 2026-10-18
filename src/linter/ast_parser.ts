@@ -26,6 +26,7 @@ export function parseWorkflowYaml(content: string, filePath: string = 'workflow.
   const parsedJobs: ParsedJobNode[] = [];
   let rootPermissions: any = undefined;
   let workflowName: string | undefined = undefined;
+  let workflowOn: any = undefined;
 
   const contents = doc.contents;
   if (isMap(contents)) {
@@ -34,6 +35,10 @@ export function parseWorkflowYaml(content: string, filePath: string = 'workflow.
 
       if (keyStr === 'name' && isScalar(pair.value)) {
         workflowName = String(pair.value.value);
+      }
+
+      if (keyStr === 'on') {
+        workflowOn = pair.value ? (pair.value as any).toJSON() : undefined;
       }
 
       if (keyStr === 'permissions') {
@@ -140,6 +145,7 @@ export function parseWorkflowYaml(content: string, filePath: string = 'workflow.
     filePath,
     rawContent: content,
     name: workflowName,
+    on: workflowOn,
     permissions: rootPermissions,
     jobs: parsedJobs,
     lineCounter: getLocation,

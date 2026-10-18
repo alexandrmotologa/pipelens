@@ -6,6 +6,8 @@ import { shaPinningRule } from './sha_pinning.js';
 import { scriptInjectionRule } from './script_injection.js';
 import { permissionsRule } from './permissions.js';
 import { secretLeakRule } from './secret_leak.js';
+import { prTargetCheckoutRule } from './pr_target_checkout.js';
+import { selfHostedRunnerRule } from './self_hosted.js';
 import { LintRule } from './types.js';
 
 export const ALL_RULES: LintRule[] = [
@@ -13,6 +15,8 @@ export const ALL_RULES: LintRule[] = [
   scriptInjectionRule,
   permissionsRule,
   secretLeakRule,
+  prTargetCheckoutRule,
+  selfHostedRunnerRule,
 ];
 
 /**
@@ -60,5 +64,8 @@ export * from './sha_pinning.js';
 export * from './script_injection.js';
 export * from './permissions.js';
 export * from './secret_leak.js';
+export * from './pr_target_checkout.js';
+export * from './self_hosted.js';
+export * from './sha_resolver.js';
 export * from './sarif_exporter.js';
 export * from './fixer.js';

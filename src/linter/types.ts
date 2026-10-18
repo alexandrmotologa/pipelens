@@ -29,6 +29,7 @@ export interface ParsedWorkflowDoc {
   filePath: string;
   rawContent: string;
   name?: string;
+  on?: any;
   permissions?: any;
   jobs: ParsedJobNode[];
   lineCounter: (offset: number) => WorkflowLocation;

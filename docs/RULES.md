@@ -95,3 +95,30 @@ Setting `permissions: write-all` at the workflow root or job level grants broad 
 
 ### Explanation
 Hardcoding personal access tokens, AWS keys, Slack tokens, or private keys directly in workflow files exposes credentials in git history. Credentials must be stored in GitHub Secrets and accessed via `${{ secrets.SECRET_NAME }}`.
+
+---
+
+## Rule PL-SEC-006: Untrusted Pull Request Target Checkout
+
+- **Severity**: Critical
+- **Category**: Privilege Escalation
+- **Fix**: Manual
+
+### Explanation
+Workflows triggered on `pull_request_target` run with write permissions and access to repository secrets from the base repository context. If a job checks out untrusted head code (`ref: ${{ github.event.pull_request.head.sha }}` or `head.ref`) and subsequently runs build or test scripts, external pull requests can execute malicious code with write access to repository tokens.
+
+Hardened posture: Run build and lint scripts in a separate unprivileged `pull_request` event or build without checking out arbitrary fork refs in privileged contexts.
+
+---
+
+## Rule PL-SEC-007: Self-Hosted Runner on Public Pull Request
+
+- **Severity**: High
+- **Category**: Infrastructure Security
+- **Fix**: Manual
+
+### Explanation
+Executing public pull requests on self-hosted runners exposes private corporate infrastructure, local networks, and runner state to unauthenticated code execution.
+
+Public workflows should run on ephemeral GitHub-hosted runners (`ubuntu-latest`, `macos-latest`, `windows-latest`) or isolated sandboxed clusters with runner teardown after each job.
+

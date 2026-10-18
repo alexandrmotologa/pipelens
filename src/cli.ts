@@ -14,6 +14,11 @@ import { auditCacheTelemetry } from './analyzer/cache_auditor.js';
 import { expandMatrix } from './evaluator/matrix.js';
 import { createServer } from './server/app.js';
 import { SecurityFinding } from './types/index.js';
+import { compareWorkflowRuns } from './analyzer/diff_engine.js';
+import { exportDagToMermaid, exportDagToSvg } from './analyzer/dag_exporter.js';
+import { generateStepSummary } from './reporter/step_summary.js';
+import { generateSafeFixAsync } from './linter/fixer.js';
+import { SAMPLE_WORKFLOW_RUN } from './api/sample_data.js';
 
 const program = new Command();
 
@@ -259,6 +264,184 @@ program
       console.log(chalk.green('All workflow files are already fully hardened. No changes required.\n'));
     } else if (options.dryRun) {
       console.log(chalk.yellow(`Dry-run mode: ${fixedCount} file(s) would be modified.\n`));
+    }
+  });
+
+// DIFF COMMAND
+program
+  .command('diff')
+  .description('Compare two workflow runs to detect duration regressions, step deltas, and cost changes.')
+  .argument('[repo]', 'Target repository (or "sample" for demo comparison)', 'sample')
+  .argument('[baseRunId]', 'Baseline workflow run ID', 'baseline')
+  .argument('[targetRunId]', 'Target workflow run ID', 'target')
+  .option('--token <token>', 'GitHub Personal Access Token')
+  .action(async (repo: string, baseRunId: string, targetRunId: string, options) => {
+    try {
+      console.log(chalk.bold.cyan('\n📊 PipeLens Run-to-Run Regression & Diff Analyzer\n'));
+
+      let baseRun: import('./types/index.js').WorkflowRunTelemetry = SAMPLE_WORKFLOW_RUN;
+      let targetRun: import('./types/index.js').WorkflowRunTelemetry = {
+        ...SAMPLE_WORKFLOW_RUN,
+        id: 89410300,
+        name: 'CI / Test & Build Suite #143 (PR #45)',
+        totalDurationMs: 630000, // 10m 30s (slower regression demo)
+        jobs: SAMPLE_WORKFLOW_RUN.jobs.map(j => ({
+          ...j,
+          durationMs: j.name === 'unit-tests' ? 330000 : j.durationMs,
+        })),
+      };
+
+      if (repo !== 'sample' && repo !== 'demo') {
+        const [owner, repoName] = repo.split('/');
+        if (!owner || !repoName) {
+          console.error(chalk.red('Invalid repository format. Expected "owner/repo"'));
+          process.exit(1);
+        }
+        baseRun = await fetchWorkflowRunTelemetry(owner, repoName, baseRunId, options.token);
+        targetRun = await fetchWorkflowRunTelemetry(owner, repoName, targetRunId, options.token);
+      }
+
+      const diff = compareWorkflowRuns(baseRun, targetRun);
+
+      console.log(`Baseline Run: ${chalk.bold(diff.baselineName)} (${diff.baselineRunId})`);
+      console.log(`Target Run:   ${chalk.bold(diff.targetName)} (${diff.targetRunId})\n`);
+
+      const wallClockDeltaSec = Math.round(diff.wallClockDeltaMs / 1000);
+      const isWallSlower = diff.wallClockDeltaMs > 0;
+      const wallColor = isWallSlower ? chalk.red : chalk.green;
+      console.log(`Wall-Clock Time:  ${wallColor((isWallSlower ? '+' : '') + wallClockDeltaSec + 's')} (${wallColor((isWallSlower ? '+' : '') + diff.wallClockDeltaPercent + '%')})`);
+
+      const cpDeltaSec = Math.round(diff.criticalPathDeltaMs / 1000);
+      const isCpSlower = diff.criticalPathDeltaMs > 0;
+      const cpColor = isCpSlower ? chalk.red : chalk.green;
+      console.log(`Critical Path:    ${cpColor((isCpSlower ? '+' : '') + cpDeltaSec + 's')}`);
+      console.log(`Billable Minutes: ${diff.billableMinutesDelta > 0 ? chalk.red('+' + diff.billableMinutesDelta) : chalk.green(diff.billableMinutesDelta)} mins`);
+      console.log(`Cost Delta:       ${diff.costDeltaUsd > 0 ? chalk.red('+$' + diff.costDeltaUsd.toFixed(4)) : chalk.green('-$' + Math.abs(diff.costDeltaUsd).toFixed(4))} USD\n`);
+
+      // Job Deltas
+      console.log(chalk.bold('Job Execution Breakdown:'));
+      for (const j of diff.jobDeltas) {
+        const sign = j.deltaMs > 0 ? '+' : '';
+        const durDeltaSec = Math.round(j.deltaMs / 1000);
+        const col = j.status === 'slower' ? chalk.red : j.status === 'faster' ? chalk.green : chalk.dim;
+        console.log(`  • ${chalk.bold(j.name)}: ${col(sign + durDeltaSec + 's')} (${Math.round(j.targetDurationMs / 1000)}s total)`);
+      }
+      console.log();
+
+      if (diff.regressions.length > 0) {
+        console.log(chalk.bold.red('⚠️ Performance Regressions Detected:'));
+        for (const r of diff.regressions) {
+          console.log(`  • ${chalk.yellow(r)}`);
+        }
+        console.log();
+      }
+
+      if (diff.improvements.length > 0) {
+        console.log(chalk.bold.green('✓ Performance Improvements:'));
+        for (const imp of diff.improvements) {
+          console.log(`  • ${chalk.green(imp)}`);
+        }
+        console.log();
+      }
+    } catch (err: any) {
+      console.error(chalk.red(`Error comparing runs: ${err.message}`));
+      process.exit(1);
+    }
+  });
+
+// EXPORT-DAG COMMAND
+program
+  .command('export-dag')
+  .description('Export workflow dependency DAG as Mermaid syntax or a standalone SVG vector diagram.')
+  .argument('[target]', 'YAML workflow file or repository (defaults to sample)', 'sample')
+  .option('-f, --format <format>', 'Export format: mermaid or svg', 'mermaid')
+  .option('-o, --output <file>', 'Save output to file')
+  .action(async (target: string, options) => {
+    try {
+      let jobs = SAMPLE_WORKFLOW_RUN.jobs;
+
+      if (target.endsWith('.yml') || target.endsWith('.yaml')) {
+        const content = fs.readFileSync(target, 'utf8');
+        const doc = YAML.parse(content);
+        const parsedJobs: any[] = [];
+        for (const [id, j] of Object.entries<any>(doc.jobs || {})) {
+          parsedJobs.push({
+            id,
+            name: j.name || id,
+            status: 'completed',
+            conclusion: 'success',
+            startedAt: null,
+            completedAt: null,
+            durationMs: 60000,
+            queueDurationMs: 0,
+            runnerName: null,
+            runnerOs: 'ubuntu',
+            steps: [],
+            needs: Array.isArray(j.needs) ? j.needs : j.needs ? [j.needs] : [],
+          });
+        }
+        jobs = parsedJobs;
+      } else if (target !== 'sample' && target.includes('/')) {
+        const [owner, repo] = target.split('/');
+        const run = await fetchWorkflowRunTelemetry(owner, repo);
+        jobs = run.jobs;
+      }
+
+      const criticalPath = computeCriticalPath(jobs);
+      const output = options.format.toLowerCase() === 'svg'
+        ? exportDagToSvg(criticalPath)
+        : exportDagToMermaid(criticalPath);
+
+      if (options.output) {
+        fs.writeFileSync(options.output, output, 'utf8');
+        console.log(chalk.green(`Exported DAG diagram to ${options.output}`));
+      } else {
+        console.log(output);
+      }
+    } catch (err: any) {
+      console.error(chalk.red(`Error exporting DAG: ${err.message}`));
+      process.exit(1);
+    }
+  });
+
+// SUMMARY COMMAND
+program
+  .command('summary')
+  .description('Generate GitHub Step Summary markdown with metrics and embedded Mermaid diagram.')
+  .argument('[repo]', 'Repository (or "sample")', 'sample')
+  .argument('[run-id]', 'Workflow run ID', 'latest')
+  .option('--token <token>', 'GitHub Personal Access Token')
+  .option('-o, --output <file>', 'Write output to file (default stdout for $GITHUB_STEP_SUMMARY)')
+  .action(async (repo: string, runId: string, options) => {
+    try {
+      let run = SAMPLE_WORKFLOW_RUN;
+      if (repo !== 'sample' && repo.includes('/')) {
+        const [owner, repoName] = repo.split('/');
+        run = await fetchWorkflowRunTelemetry(owner, repoName, runId, options.token);
+      }
+
+      const criticalPath = computeCriticalPath(run.jobs);
+      const cost = calculateRunCost(run.jobs);
+      const cache = auditCacheTelemetry(run.jobs);
+      const securityFindings = lintWorkflowFiles(['.github/workflows']);
+
+      const summaryMarkdown = generateStepSummary({
+        run,
+        criticalPath,
+        cost,
+        cache,
+        securityFindings,
+      });
+
+      if (options.output) {
+        fs.writeFileSync(options.output, summaryMarkdown, 'utf8');
+        console.log(chalk.green(`Summary written to ${options.output}`));
+      } else {
+        console.log(summaryMarkdown);
+      }
+    } catch (err: any) {
+      console.error(chalk.red(`Error generating summary: ${err.message}`));
+      process.exit(1);
     }
   });
 

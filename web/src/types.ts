@@ -159,3 +159,39 @@ export interface ProfileData {
   cost: CostEstimate;
   cache: CacheAuditResult;
 }
+
+export interface StepDelta {
+  name: string;
+  baselineDurationMs: number;
+  targetDurationMs: number;
+  deltaMs: number;
+}
+
+export interface JobDelta {
+  name: string;
+  status: 'faster' | 'slower' | 'unchanged' | 'added' | 'removed';
+  baselineDurationMs: number;
+  targetDurationMs: number;
+  deltaMs: number;
+  stepDeltas: StepDelta[];
+}
+
+export interface RunComparisonResult {
+  baselineRunId: number | string;
+  targetRunId: number | string;
+  baselineName: string;
+  targetName: string;
+  wallClockDeltaMs: number;
+  wallClockDeltaPercent: number;
+  criticalPathDeltaMs: number;
+  criticalPathChanged: boolean;
+  baselineCriticalPath: string[];
+  targetCriticalPath: string[];
+  costDeltaUsd: number;
+  billableMinutesDelta: number;
+  carbonDeltaGrams: number;
+  cacheHitRatioDelta: number;
+  jobDeltas: JobDelta[];
+  regressions: string[];
+  improvements: string[];
+}
