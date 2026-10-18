@@ -1,0 +1,32 @@
+name: Insecure CI Pipeline
+
+on:
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, synchronize]
+
+# Flaw 1: Broad write-all permissions
+permissions: write-all
+
+jobs:
+  triage:
+    name: Triage & Welcome
+    runs-on: ubuntu-latest
+    steps:
+      # Flaw 2: Mutable unpinned action reference
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Flaw 3: Direct script injection sink via ${{ github.event.issue.title }}
+      - name: Process Issue Title
+        run: |
+          echo "Processing issue: ${{ github.event.issue.title }}"
+          echo "Issue author is: ${{ github.event.issue.user.login }}"
+
+      # Flaw 4: Hardcoded token leak
+      - name: Notify Slack Webhook
+        env:
+          SLACK_TOKEN: "xoxb-1234567890-abcdefghij"
+        run: |
+          echo "Connecting with $SLACK_TOKEN"

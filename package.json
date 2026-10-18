@@ -1,0 +1,56 @@
+{
+  "name": "pipelens",
+  "version": "1.0.0",
+  "description": "GitHub Actions CI/CD bottleneck profiler, critical path DAG analyzer, supply-chain security linter, and local matrix simulator.",
+  "type": "module",
+  "bin": {
+    "pipelens": "./bin/pipelens.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "start": "node ./dist/cli.js",
+    "dev:cli": "tsx ./src/cli.ts",
+    "web:dev": "npm run dev --prefix web",
+    "web:build": "npm run build --prefix web"
+  },
+  "keywords": [
+    "github-actions",
+    "ci-cd",
+    "observability",
+    "workflow-automation",
+    "critical-path-method",
+    "directed-acyclic-graph",
+    "static-analysis",
+    "supply-chain-security",
+    "matrix-simulator",
+    "developer-tools"
+  ],
+  "author": "Alexandr Motologa",
+  "license": "MIT",
+  "dependencies": {
+    "@octokit/rest": "^21.1.0",
+    "chalk": "^5.4.1",
+    "commander": "^13.1.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.0",
+    "puppeteer": "^25.14.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
