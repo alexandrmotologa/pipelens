@@ -7,7 +7,7 @@ import YAML from 'yaml';
 import { lintWorkflowFiles, lintWorkflowContent } from './linter/index.js';
 import { exportToSarif } from './linter/sarif_exporter.js';
 import { generateSafeFix } from './linter/fixer.js';
-import { fetchWorkflowRunTelemetry } from './api/github_client.js';
+import { fetchWorkflowRunTelemetry, fetchRecentWorkflowRuns } from './api/github_client.js';
 import { computeCriticalPath } from './analyzer/critical_path.js';
 import { calculateRunCost } from './analyzer/cost_calculator.js';
 import { auditCacheTelemetry } from './analyzer/cache_auditor.js';
@@ -297,8 +297,21 @@ program
           console.error(chalk.red('Invalid repository format. Expected "owner/repo"'));
           process.exit(1);
         }
-        baseRun = await fetchWorkflowRunTelemetry(owner, repoName, baseRunId, options.token);
-        targetRun = await fetchWorkflowRunTelemetry(owner, repoName, targetRunId, options.token);
+
+        let effectiveBaseId = baseRunId;
+        let effectiveTargetId = targetRunId;
+
+        if (baseRunId === 'baseline' || targetRunId === 'target' || !baseRunId || !targetRunId) {
+          const recents = await fetchRecentWorkflowRuns(owner, repoName, 2, options.token);
+          if (recents.length < 2) {
+            throw new Error(`Repository ${owner}/${repoName} requires at least 2 completed workflow runs to perform diff comparison.`);
+          }
+          effectiveTargetId = String(recents[0].id);
+          effectiveBaseId = String(recents[1].id);
+        }
+
+        baseRun = await fetchWorkflowRunTelemetry(owner, repoName, effectiveBaseId, options.token);
+        targetRun = await fetchWorkflowRunTelemetry(owner, repoName, effectiveTargetId, options.token);
       }
 
       const diff = compareWorkflowRuns(baseRun, targetRun);

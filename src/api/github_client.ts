@@ -1,4 +1,5 @@
 import { Octokit } from '@octokit/rest';
+import YAML from 'yaml';
 import { WorkflowRunTelemetry, JobTelemetry, StepTelemetry, RunnerOsType } from '../types/index.js';
 import { SAMPLE_WORKFLOW_RUN } from './sample_data.js';
 
@@ -26,6 +27,38 @@ function inferRunnerOsFromLabels(labels: string[] = [], runnerName: string | nul
 }
 
 /**
+ * Fetches recent completed workflow runs for a repository.
+ */
+export async function fetchRecentWorkflowRuns(
+  owner: string,
+  repo: string,
+  count: number = 2,
+  token?: string
+): Promise<Array<{ id: number; name: string; runNumber: number; createdAt: string }>> {
+  if (owner === 'sample' || owner === 'demo') {
+    return [
+      { id: 89410294, name: 'CI / Test & Build Suite #142', runNumber: 142, createdAt: new Date().toISOString() },
+      { id: 89410300, name: 'CI / Test & Build Suite #143 (PR #45)', runNumber: 143, createdAt: new Date().toISOString() },
+    ];
+  }
+
+  const octokit = createOctokitClient(token);
+  const response = await octokit.rest.actions.listWorkflowRunsForRepo({
+    owner,
+    repo,
+    per_page: Math.max(count, 5),
+    status: 'completed',
+  });
+
+  return response.data.workflow_runs.slice(0, count).map(r => ({
+    id: r.id,
+    name: r.display_title || r.name || `Run #${r.run_number}`,
+    runNumber: r.run_number,
+    createdAt: r.created_at,
+  }));
+}
+
+/**
  * Fetches workflow run telemetry from the GitHub REST API.
  */
 export async function fetchWorkflowRunTelemetry(
@@ -34,12 +67,16 @@ export async function fetchWorkflowRunTelemetry(
   runId?: number | string,
   token?: string
 ): Promise<WorkflowRunTelemetry> {
+  if (owner === 'sample' || owner === 'demo') {
+    return SAMPLE_WORKFLOW_RUN;
+  }
+
   const octokit = createOctokitClient(token);
 
   try {
     let targetRunId: number;
 
-    if (!runId || runId === 'latest') {
+    if (!runId || runId === 'latest' || runId === 'baseline' || runId === 'target') {
       const runsResponse = await octokit.rest.actions.listWorkflowRunsForRepo({
         owner,
         repo,
@@ -64,7 +101,41 @@ export async function fetchWorkflowRunTelemetry(
     });
     const run = runResponse.data;
 
-    // 2. Fetch jobs
+    // 2. Attempt to fetch workflow YAML to extract exact `needs` DAG dependencies
+    const jobNeedsMap = new Map<string, string[]>();
+    if (run.path) {
+      try {
+        const fileContent = await octokit.rest.repos.getContent({
+          owner,
+          repo,
+          path: run.path,
+          ref: run.head_sha,
+        });
+
+        if ('content' in fileContent.data && fileContent.data.content) {
+          const yamlStr = Buffer.from(fileContent.data.content, 'base64').toString('utf8');
+          const parsed = YAML.parse(yamlStr);
+          if (parsed && typeof parsed === 'object' && parsed.jobs) {
+            for (const [jobKey, jobDef] of Object.entries<any>(parsed.jobs)) {
+              if (jobDef && typeof jobDef === 'object') {
+                let needsList: string[] = [];
+                if (jobDef.needs) {
+                  needsList = Array.isArray(jobDef.needs) ? jobDef.needs : [String(jobDef.needs)];
+                }
+                jobNeedsMap.set(jobKey, needsList);
+                if (jobDef.name) {
+                  jobNeedsMap.set(String(jobDef.name), needsList);
+                }
+              }
+            }
+          }
+        }
+      } catch {
+        // Repository content may be inaccessible or deleted; continue with telemetry data
+      }
+    }
+
+    // 3. Fetch jobs
     const jobsResponse = await octokit.rest.actions.listJobsForWorkflowRun({
       owner,
       repo,
@@ -96,7 +167,14 @@ export async function fetchWorkflowRunTelemetry(
         };
       });
 
-      // Extract explicit needs if present in job or infer from name
+      // Match explicit needs from YAML mapping
+      let needs: string[] = jobNeedsMap.get(job.name) || [];
+      if (needs.length === 0) {
+        // Strip matrix suffix e.g. "test (ubuntu-latest, 20)" -> "test"
+        const baseName = job.name.split(' (')[0].trim();
+        needs = jobNeedsMap.get(baseName) || [];
+      }
+
       return {
         id: job.id,
         name: job.name,
@@ -109,7 +187,7 @@ export async function fetchWorkflowRunTelemetry(
         runnerName: job.runner_name,
         runnerOs: inferRunnerOsFromLabels(job.labels, job.runner_name),
         steps,
-        needs: [], // GitHub jobs API doesn't expose `needs` directly, parsed from workflow YAML or reconstructed
+        needs,
       };
     });
 
@@ -130,10 +208,6 @@ export async function fetchWorkflowRunTelemetry(
       jobs,
     };
   } catch (error: any) {
-    // If running in development or offline mode, fall back to sample fixture
-    if (owner === 'demo' || owner === 'sample' || !token) {
-      return SAMPLE_WORKFLOW_RUN;
-    }
     throw new Error(`Failed to fetch GitHub Actions telemetry for ${owner}/${repo}: ${error.message}`);
   }
 }

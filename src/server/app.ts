@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'node:path';
 import fs from 'node:fs';
-import { fetchWorkflowRunTelemetry } from '../api/github_client.js';
+import { fetchWorkflowRunTelemetry, fetchRecentWorkflowRuns } from '../api/github_client.js';
 import { computeCriticalPath } from '../analyzer/critical_path.js';
 import { calculateRunCost } from '../analyzer/cost_calculator.js';
 import { auditCacheTelemetry } from '../analyzer/cache_auditor.js';
@@ -120,12 +120,21 @@ export function createServer(staticDir?: string) {
       if (repo !== 'sample' && repo !== 'demo') {
         const [owner, repoName] = repo.split('/');
         if (owner && repoName) {
-          if (baseRunId) {
-            baseRun = await fetchWorkflowRunTelemetry(owner, repoName, baseRunId, token);
+          let effBaseId = baseRunId;
+          let effTargetId = targetRunId;
+
+          if (!effBaseId || !effTargetId) {
+            const recents = await fetchRecentWorkflowRuns(owner, repoName, 2, token);
+            if (recents.length < 2) {
+              res.status(400).json({ error: `Repository ${owner}/${repoName} requires at least 2 completed workflow runs to compute diff.` });
+              return;
+            }
+            effTargetId = String(recents[0].id);
+            effBaseId = String(recents[1].id);
           }
-          if (targetRunId) {
-            targetRun = await fetchWorkflowRunTelemetry(owner, repoName, targetRunId, token);
-          }
+
+          baseRun = await fetchWorkflowRunTelemetry(owner, repoName, effBaseId, token);
+          targetRun = await fetchWorkflowRunTelemetry(owner, repoName, effTargetId, token);
         }
       } else {
         // Synthesize an optimized target run for demo comparison
