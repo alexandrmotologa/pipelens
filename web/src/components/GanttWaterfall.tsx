@@ -55,7 +55,7 @@ export const GanttWaterfall: React.FC<GanttWaterfallProps> = ({ run, criticalPat
       </div>
 
       {/* Time Axis Header */}
-      <div className="relative h-6 border-b border-slate-800 mb-2 ml-48 sm:ml-64 text-[10px] text-slate-500">
+      <div className="relative h-6 border-b border-slate-800 mb-2 ml-36 sm:ml-60 md:ml-64 text-[10px] text-slate-500">
         <span className="absolute left-0">0s</span>
         <span className="absolute left-1/4">{Math.round((totalDuration * 0.25) / 1000)}s</span>
         <span className="absolute left-1/2">{Math.round((totalDuration * 0.5) / 1000)}s</span>
@@ -83,7 +83,7 @@ export const GanttWaterfall: React.FC<GanttWaterfallProps> = ({ run, criticalPat
                 className="flex items-center p-2.5 hover:bg-slate-800/40 cursor-pointer transition-colors"
               >
                 {/* Job Info Left Column */}
-                <div className="w-48 sm:w-64 flex-shrink-0 pr-3">
+                <div className="w-36 sm:w-60 md:w-64 flex-shrink-0 pr-2 sm:pr-3">
                   <div className="flex items-center space-x-1.5">
                     <span className="text-slate-500 text-xs">{isExpanded ? '▼' : '▶'}</span>
                     <span className={`text-xs font-semibold truncate ${isCritical ? 'text-amber-300' : 'text-slate-200'}`}>

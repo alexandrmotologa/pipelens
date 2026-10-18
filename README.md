@@ -1,6 +1,19 @@
-# PipeLens
+<p align="center">
+  <img src="docs/images/logo.png?raw=true" alt="PipeLens Logo" width="130" style="border-radius: 24px;" />
+</p>
 
-GitHub Actions CI/CD bottleneck profiler, critical path DAG analyzer, supply-chain security linter, and local matrix simulator.
+<h1 align="center">PipeLens</h1>
+
+<p align="center">
+  <strong>GitHub Actions CI/CD bottleneck profiler, critical path DAG analyzer, supply-chain security linter, and local matrix simulator.</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/alexandrmotologa/pipelens"><img src="https://img.shields.io/badge/status-live-emerald?style=flat-square" alt="Status" /></a>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-22+-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node" /></a>
+  <a href="https://react.dev"><img src="https://img.shields.io/badge/react-19-61dafb?style=flat-square&logo=react&logoColor=black" alt="React" /></a>
+  <a href="https://github.com/alexandrmotologa/pipelens/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License" /></a>
+</p>
 
 ![PipeLens Animated Demo](docs/images/pipelens_demo.gif)
 
@@ -29,9 +42,13 @@ PipeLens profiles GitHub Actions workflows to identify duration bottlenecks, mod
 | :---: | :---: |
 | ![Gantt Timeline](docs/images/pipelens_profiler.png) | ![DAG Visualizer](docs/images/pipelens_dag.png) |
 
-| Security Linter & Findings | Automated Hardening Diff |
+| Run-to-Run Regression Analyzer | Security Linter & Findings |
 | :---: | :---: |
-| ![Security Linter](docs/images/pipelens_linter.png) | ![Safe Diff](docs/images/pipelens_diff.png) |
+| ![Run Regression Diff](docs/images/pipelens_regression.png) | ![Security Linter](docs/images/pipelens_linter.png) |
+
+| Automated Hardening Diff | Matrix Expansion Simulator |
+| :---: | :---: |
+| ![Safe Diff](docs/images/pipelens_diff.png) | ![Matrix Simulator](docs/images/pipelens_matrix.png) |
 
 ---
 

@@ -41,20 +41,20 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Repo Input & Controls */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1.5 sm:space-x-2">
             <div className="relative">
               <input
                 type="text"
                 value={repo}
                 onChange={(e) => setRepo(e.target.value)}
                 placeholder="owner/repo or 'sample'"
-                className="w-48 sm:w-64 bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                className="w-32 sm:w-64 bg-slate-950 border border-slate-700 rounded-lg px-2.5 sm:px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
               />
             </div>
             <button
               onClick={onAnalyze}
               disabled={isLoading}
-              className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg transition-colors flex items-center space-x-1.5 shadow-sm"
+              className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold px-2.5 sm:px-3.5 py-1.5 rounded-lg transition-colors flex items-center space-x-1 sm:space-x-1.5 shadow-sm whitespace-nowrap"
             >
               {isLoading ? (
                 <span>Profiling...</span>

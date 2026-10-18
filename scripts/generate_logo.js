@@ -1,0 +1,218 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { Resvg } from '@resvg/resvg-js';
+
+function buildLogoSvg() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <clipPath id="squircle-clip">
+      <rect x="24" y="24" width="976" height="976" rx="220" />
+    </clipPath>
+
+    <linearGradient id="emerald-optic" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="50%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+
+    <linearGradient id="beak-grad-r" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+
+    <linearGradient id="beak-grad-l" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="50%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#92400e"/>
+    </linearGradient>
+
+    <filter id="subtle-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#0f172a" flood-opacity="0.18" />
+    </filter>
+  </defs>
+
+  <!-- Luxury White Squircle Container -->
+  <rect x="24" y="24" width="976" height="976" rx="220" fill="#ffffff" stroke="#e2e8f0" stroke-width="6" />
+
+  <g clip-path="url(#squircle-clip)">
+    <g transform="translate(512, 512)" filter="url(#subtle-shadow)">
+
+      <!-- Hexagonal Architectural Gateway Frame -->
+      <polygon points="
+        0,-385
+        333,-192
+        333,192
+        0,385
+        -333,192
+        -333,-192
+      " fill="none" stroke="#0f172a" stroke-width="36" stroke-linejoin="round" />
+
+      <!-- Inner Precision Telemetry Ring (Dashed Emerald) -->
+      <polygon points="
+        0,-350
+        303,-175
+        303,175
+        0,350
+        -303,175
+        -303,-175
+      " fill="none" stroke="#10b981" stroke-width="4" opacity="0.45" stroke-dasharray="14, 10" />
+
+      <!-- WATERTIGHT SILHOUETTE BASE -->
+      <path d="
+        M 0 -315
+        L 75 -285
+        L 145 -220
+        L 220 -110
+        L 270 20
+        L 285 140
+        L 220 280
+        L 120 240
+        L 0 315
+        L -120 240
+        L -220 280
+        L -285 140
+        L -270 20
+        L -220 -110
+        L -145 -220
+        L -75 -285
+        Z
+      " fill="#090d16" />
+
+      <!-- ================= SYMMETRICAL LOW-POLY RAPTOR ================= -->
+      
+      <!-- CROWN APEX -->
+      <polygon points="0,-315 75,-285 45,-220 0,-245" fill="#475569" />
+      <polygon points="0,-315 -75,-285 -45,-220 0,-245" fill="#1e293b" />
+
+      <polygon points="75,-285 145,-220 85,-180 45,-220" fill="#334155" />
+      <polygon points="-75,-285 -145,-220 -85,-180 -45,-220" fill="#1e293b" />
+
+      <!-- FOREHEAD DIAMOND -->
+      <polygon points="0,-245 45,-220 60,-150 0,-175" fill="#64748b" />
+      <polygon points="0,-245 -45,-220 -60,-150 0,-175" fill="#334155" />
+
+      <!-- SUPERCILIARY BROW SHIELD (PREDATOR ANGLE) -->
+      <polygon points="0,-175 60,-150 120,-110 50,-85 0,-105" fill="#475569" />
+      <polygon points="0,-175 -60,-150 -120,-110 -50,-85 0,-105" fill="#1e293b" />
+
+      <!-- TEMPLE FACETS -->
+      <polygon points="145,-220 220,-110 150,-70 85,-180" fill="#1e293b" />
+      <polygon points="-145,-220 -220,-110 -150,-70 -85,-180" fill="#0f172a" />
+
+      <polygon points="85,-180 150,-70 120,-110 60,-150" fill="#334155" />
+      <polygon points="-85,-180 -150,-70 -120,-110 -60,-150" fill="#1e293b" />
+
+      <!-- PREDATOR ALMOND EYES (UPWARD CANTERED) -->
+      <!-- Right Eye (Viewer's Right) -->
+      <polygon points="35,-75 110,-95 125,-70 50,-50" fill="#090d16" stroke="#10b981" stroke-width="2.5" />
+      <polygon points="45,-72 100,-88 115,-70 55,-55" fill="url(#emerald-optic)" />
+      <polygon points="65,-68 90,-80 98,-68 72,-60" fill="#ecfdf5" />
+
+      <!-- Left Eye (Viewer's Left) -->
+      <polygon points="-35,-75 -110,-95 -125,-70 -50,-50" fill="#090d16" stroke="#10b981" stroke-width="2.5" />
+      <polygon points="-45,-72 -100,-88 -115,-70 -55,-55" fill="url(#emerald-optic)" />
+      <polygon points="-65,-68 -90,-80 -98,-68 -72,-60" fill="#ecfdf5" />
+
+      <!-- SNOUT / NASAL BRIDGE -->
+      <polygon points="0,-105 35,-75 25,-5 0,15" fill="#94a3b8" />
+      <polygon points="0,-105 -35,-75 -25,-5 0,15" fill="#64748b" />
+
+      <!-- RAPTOR UPPER BEAK -->
+      <polygon points="0,15 25,-5 35,50 0,95" fill="url(#beak-grad-r)" />
+      <polygon points="0,15 -25,-5 -35,50 0,95" fill="url(#beak-grad-l)" />
+
+      <!-- HOOKED BEAK TIP -->
+      <polygon points="0,95 35,50 20,130 0,165" fill="#f59e0b" />
+      <polygon points="0,95 -35,50 -20,130 0,165" fill="#b45309" />
+      <polygon points="0,165 20,130 0,185" fill="#fbbf24" />
+      <polygon points="0,165 -20,130 0,185" fill="#92400e" />
+
+      <!-- FALCON CHEEK / MALAR SHARDS -->
+      <polygon points="50,-50 125,-70 145,-5 75,15" fill="#1e293b" />
+      <polygon points="-50,-50 -125,-70 -145,-5 -75,15" fill="#0f172a" />
+
+      <polygon points="75,15 145,-5 125,75 45,65" fill="#334155" />
+      <polygon points="-75,15 -145,-5 -125,75 -45,65" fill="#1e293b" />
+
+      <!-- CHIN / THROAT -->
+      <polygon points="0,185 25,130 40,190 0,220" fill="#1e293b" />
+      <polygon points="0,185 -25,130 -40,190 0,220" fill="#0f172a" />
+
+      <polygon points="25,-5 75,15 45,65 25,130 0,95" fill="#334155" />
+      <polygon points="-25,-5 -75,15 -45,65 -25,130 0,95" fill="#1e293b" />
+
+      <!-- FLANK PLATES -->
+      <polygon points="45,65 125,75 145,160 40,190" fill="#475569" />
+      <polygon points="-45,65 -125,75 -145,160 -40,190" fill="#1e293b" />
+
+      <!-- WING SHOULDERS -->
+      <polygon points="220,-110 270,20 205,50 150,-70" fill="#334155" />
+      <polygon points="-220,-110 -270,20 -205,50 -150,-70" fill="#1e293b" />
+
+      <polygon points="150,-70 205,50 145,-5" fill="#1e293b" />
+      <polygon points="-150,-70 -205,50 -145,-5" fill="#0f172a" />
+
+      <polygon points="270,20 285,140 220,165 205,50" fill="#1e293b" />
+      <polygon points="-270,20 -285,140 -220,165 -205,50" fill="#0f172a" />
+
+      <polygon points="205,50 220,165 145,160 125,75" fill="#475569" />
+      <polygon points="-205,50 -220,165 -145,160 -125,75" fill="#1e293b" />
+
+      <!-- BREAST ARMOR & OBSERVABILITY CORE -->
+      <polygon points="0,220 40,190 85,265 0,285" fill="#1e293b" />
+      <polygon points="0,220 -40,190 -85,265 0,285" fill="#0f172a" />
+
+      <polygon points="40,190 145,160 165,265 85,265" fill="#334155" />
+      <polygon points="-40,190 -145,160 -165,265 -85,265" fill="#1e293b" />
+
+      <polygon points="145,160 220,165 220,280 165,265" fill="#1e293b" />
+      <polygon points="-145,160 -220,165 -220,280 -165,265" fill="#090d16" />
+
+      <!-- TELEMETRY LENS APERTURE -->
+      <polygon points="0,230 18,260 0,290 -18,260" fill="url(#emerald-optic)" stroke="#34d399" stroke-width="2" />
+      <circle cx="0" cy="260" r="3.5" fill="#ffffff" />
+
+      <!-- BASE WING TIPS & TAIL -->
+      <polygon points="0,285 85,265 120,240 0,315" fill="#334155" />
+      <polygon points="0,285 -85,265 -120,240 0,315" fill="#1e293b" />
+
+      <polygon points="85,265 165,265 220,280 120,240" fill="#0f172a" />
+      <polygon points="-85,265 -165,265 -220,280 -120,240" fill="#050810" />
+
+      <!-- BEACON NODES -->
+      <circle cx="0" cy="-350" r="3.5" fill="#10b981" />
+      <circle cx="303" cy="175" r="3.5" fill="#10b981" />
+      <circle cx="-303" cy="175" r="3.5" fill="#10b981" />
+
+    </g>
+  </g>
+</svg>`;
+}
+
+async function main() {
+  const outputDir = path.resolve('docs/images');
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+
+  const svg = buildLogoSvg();
+  const svgPath = path.join(outputDir, 'logo.svg');
+  const pngPath = path.join(outputDir, 'logo.png');
+
+  fs.writeFileSync(svgPath, svg, 'utf8');
+  console.log(`Saved SVG: ${svgPath}`);
+
+  const resvg = new Resvg(svg, {
+    fitTo: { mode: 'width', value: 1024 },
+  });
+  const pngData = resvg.render();
+  const pngBuffer = pngData.asPng();
+  fs.writeFileSync(pngPath, pngBuffer);
+  console.log(`Saved PNG: ${pngPath} (${pngBuffer.length} bytes)`);
+}
+
+main().catch(err => {
+  console.error(err);
+  process.exit(1);
+});
